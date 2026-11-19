@@ -10,17 +10,18 @@ main{max-width:1040px;margin:0 auto;padding:32px 16px 64px}h1{font-size:26px;mar
 .scroll{overflow-x:auto}pre{background:var(--code);border-radius:8px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
 code{font-size:12.5px;word-break:break-all}.ok{color:var(--ok);font-weight:600}.no{color:var(--no);font-weight:600}ol li{margin:6px 0}
 a{color:inherit}
+@media (max-width:640px){table,tbody,tr,td{display:block;width:100%}tr:first-child{display:none}tr{border-top:1px solid var(--line);padding:8px 0}td{border:0;padding:3px 0}}
 </style></head><body><main>
 <h1>Each store's calls run on its own AI account</h1>
-<p class="sub">H292 · PR #646 at <code>f6dd3103</code> · draft, not deployed · built Nov 19, 2026 (times in Eastern)</p>
+<p class="sub">H292 · PR #646 at <code>602faca7</code> · draft, not deployed · built Nov 19, 2026 (times in Eastern)</p>
 
 <div class="card"><div class="sub">If Mia's AI errors mid-call, she says once:</div>
 <div class="say">“Sorry, it errored. We messed up. Your discount code is coming up on your screen now.”</div>
 <div class="sub">Then the code shows on the shopper's screen, the call ends, and the team gets an email. Never “give me one second”.</div></div>
 
 <h2>1. Normal calls are billed to the store's own workspace</h2>
-<p>One real text-only turn per store (no voice, no shopper), built by the same code a live call uses, then Anthropic's own usage report grouped by workspace (fetched Nov 19, 12:41:51 AM ET).</p>
-<div class="card scroll"><table><tr><th>Store</th><th>Its workspace</th><th>Turn</th><th>Mia's reply</th><th>Anthropic usage report</th></tr><tr><td><b>HeliumDeploy</b></td><td><code>wrkspc_016hBqTBDDcnsHgb6hbUe8zt</code></td><td>Nov 19, 12:29:12 AM ET</td><td>“Congrats on your purchase! What made you decide to buy from us today?”</td><td class='no'>not in the report yet</td></tr><tr><td><b>Replogle Globes</b></td><td><code>wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td><td>Nov 19, 12:29:14 AM ET</td><td>“Thanks so much for shopping with us! What made you decide to buy that item?”</td><td class='no'>not in the report yet</td></tr></table></div>
+<p>One real text-only turn per store (no voice, no shopper), built by the same code a live call uses, then Anthropic's own usage report grouped by workspace (fetched Nov 19, 1:04:19 AM ET).</p>
+<div class="card scroll"><table><tr><th>Store</th><th>Its workspace</th><th>Turn</th><th>Mia's reply</th><th>Anthropic usage report</th></tr><tr><td><b>HeliumDeploy</b></td><td><code>wrkspc_016hBqTBDDcnsHgb6hbUe8zt</code></td><td>Nov 19, 12:29:12 AM ET</td><td>“Congrats on your purchase! What made you decide to buy from us today?”</td><td class='ok'>Nov 19, 12:29:00 AM ET · 61 in / 24 out</td></tr><tr><td><b>Replogle Globes</b></td><td><code>wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td><td>Nov 19, 12:29:14 AM ET</td><td>“Thanks so much for shopping with us! What made you decide to buy that item?”</td><td class='ok'>Nov 19, 12:29:00 AM ET · 63 in / 79 out</td></tr></table></div>
 <p class="sub">HeliumDeploy's workspace (heliumdeploy-voice) was created Nov 19 and put on HD's store record as its voice workspace; HD's chat stays where it is.</p>
 
 <h2>2. The error path, end to end</h2>
@@ -32,7 +33,8 @@ a{color:inherit}
 <li><b>Alert email</b> to the team, and <b>the code is minted</b> however few words the shopper said. The store is not billed for the call.</li>
 </ol>
 <div class="card"><b>Live check:</b> a real call brain pointed at a workspace Anthropic refuses, in a real voice-agent session (text only):
-<pre>ok   store calls: one retry then the path (session conn_options)
+<pre>ok   the path exists on every workspace call, code only on store reward calls
+ok   store calls: one retry then the path (session conn_options)
 ok   the session error hook fires the path on a final AI error
 ok   path pieces: mic off + no more replies, code-unlocked message, one say, the store hang-up, the saved event
 ok   no org key on the worker: apology instead of the greeting, never the main key
@@ -50,10 +52,11 @@ ok   alert event: type, time, workspace, error class
 ok   alert event carries no message, key or prompt text
 ok   apology fails -&gt; call still ends
 ok   during the close: alert only, no second line
+ok   no-reward workspace call: Emile&#x27;s words only, alert event, call ends
 ok   French call -&gt; French apology
 ok   wrapped connection error names its cause class
 ok   call review: ended by our side, apology + code
-     label=workspace wrkspc_0000000000000000H292test errors seen=[(&#x27;llm_error&#x27;, False)] event=[{&#x27;type&#x27;: &#x27;brain_error&#x27;, &#x27;ts&#x27;: &#x27;2026-11-19T05:41:14.078139+00:00&#x27;, &#x27;error_class&#x27;: &#x27;APIStatusError 400 from BadRequestError 400&#x27;, &#x27;workspace&#x27;: &#x27;wrkspc_0000000000000000H292test&#x27;}]
+     label=workspace wrkspc_0000000000000000H292test errors seen=[(&#x27;llm_error&#x27;, False)] event=[{&#x27;type&#x27;: &#x27;brain_error&#x27;, &#x27;ts&#x27;: &#x27;2026-11-19T06:04:48.805846+00:00&#x27;, &#x27;error_class&#x27;: &#x27;APIStatusError 400 from BadRequestError 400&#x27;, &#x27;workspace&#x27;: &#x27;wrkspc_0000000000000000H292test&#x27;}]
 ok   live: label is the store workspace only
 ok   live: Anthropic refused the turn -&gt; one final llm_error
 ok   live: the path ran once: AI off, code, apology, hang up
