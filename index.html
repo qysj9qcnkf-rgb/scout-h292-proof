@@ -13,7 +13,7 @@ a{color:inherit}
 @media (max-width:640px){table,tbody,tr,td{display:block;width:100%}tr:first-child{display:none}tr{border-top:1px solid var(--line);padding:8px 0}td{border:0;padding:3px 0}}
 </style></head><body><main>
 <h1>Each store's calls run on its own AI account</h1>
-<p class="sub">H292 · PR #646 at <code>602faca7</code> · draft, not deployed · built Nov 19, 2026 (times in Eastern)</p>
+<p class="sub">H292 · PR #646 at <code>362af60d</code> · draft, not deployed · built Nov 19, 2026 (times in Eastern)</p>
 
 <div class="card"><div class="sub">If Mia's AI errors mid-call, she says once:</div>
 <div class="say">“Sorry, it errored. We messed up. Your discount code is coming up on your screen now.”</div>
@@ -132,9 +132,24 @@ ok   session options carry them
 ok   no workspace -&gt; main key
 ok   no org key -&gt; MissingOrgKey (never the main key)
 ok   placeholder brain holds no real key
+ok   store call, no workspace (timeout) -&gt; apology path, no main-key LLM
+ok   store call, no workspace (relay_error) -&gt; apology path, no main-key LLM
+ok   store call, no workspace (malformed) -&gt; apology path, no main-key LLM
+ok   store call, no workspace (unreadable) -&gt; apology path, no main-key LLM
+ok   store call, no workspace (no_workspace) -&gt; apology path, no main-key LLM
+ok   store call, no workspace (None) -&gt; apology path, no main-key LLM
+ok   marked missing even without a code bar -&gt; apology path
+ok   reason token is safe
+ok   store call with its workspace -&gt; org key + workspace
 ok   no key raises
 ALL PASS 0
 </pre></div>
+
+<h2>6. When the store's workspace can't be looked up (fails closed)</h2>
+<p>If the relay times out, errors, or answers garbage when a call starts, the call never falls back to our main key. It uses the store's last known workspace; with none known, Mia goes straight to the apology, the shopper gets the code, and the team gets the alert. Run Nov 19, 1:38:03 AM ET, file <code>scripts/h292/failed-lookup-proof.json</code> in the PR.</p>
+<div class="card scroll"><table><tr><th>Relay failure</th><th>Nothing known yet: the call carries</th><th>Workspace known before: the call carries</th></tr><tr><td>timeout</td><td><code>anthropicWorkspaceMissing=timeout</code></td><td><code>anthropicWorkspaceId=wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td></tr><tr><td>5xx</td><td><code>anthropicWorkspaceMissing=relay_error</code></td><td><code>anthropicWorkspaceId=wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td></tr><tr><td>malformed JSON</td><td><code>anthropicWorkspaceMissing=malformed</code></td><td><code>anthropicWorkspaceId=wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td></tr><tr><td>bad workspace value</td><td><code>anthropicWorkspaceMissing=malformed</code></td><td><code>anthropicWorkspaceId=wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td></tr><tr><td>missing field</td><td><code>anthropicWorkspaceMissing=malformed</code></td><td><code>anthropicWorkspaceId=wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td></tr><tr><td>connection refused</td><td><code>anthropicWorkspaceMissing=unreadable</code></td><td><code>anthropicWorkspaceId=wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td></tr></table></div>
+<div class="card scroll"><table><tr><th>What the agent receives</th><th>What its AI runs on</th></tr><tr><td>cold timeout</td><td class='ok'>apology path (no_workspace:timeout)</td></tr><tr><td>cold 5xx</td><td class='ok'>apology path (no_workspace:relay_error)</td></tr><tr><td>cold malformed JSON</td><td class='ok'>apology path (no_workspace:malformed)</td></tr><tr><td>cold bad workspace value</td><td class='ok'>apology path (no_workspace:malformed)</td></tr><tr><td>cold missing field</td><td class='ok'>apology path (no_workspace:malformed)</td></tr><tr><td>cold connection refused</td><td class='ok'>apology path (no_workspace:unreadable)</td></tr><tr><td>warm (last known)</td><td class='ok'>workspace wrkspc_01BGBazjTrNGVwqgSxkQfVXB</td></tr><tr><td>bare store payload (defence in depth)</td><td class='ok'>apology path (no_workspace:missing)</td></tr></table>
+<p class="sub">Checked with the agent's own routing code. The main key never appears for a store call.</p></div>
 
 <h2>Not done here (needs Emile's go)</h2>
 <div class="card">Merge, the relay and agent deploys, and the agent's keys (add the org key, remove the Max-plan token). Until then live calls run as before.</div>
