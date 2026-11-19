@@ -20,7 +20,7 @@ a{color:inherit}
 <div class="sub">Then the code shows on the shopper's screen, the call ends, and the team gets an email. Never “give me one second”.</div></div>
 
 <h2>1. Normal calls are billed to the store's own workspace</h2>
-<p>One real text-only turn per store (no voice, no shopper), built by the same code a live call uses, then Anthropic's own usage report grouped by workspace (fetched Nov 19, 1:04:19 AM ET).</p>
+<p>One real text-only turn per store (no voice, no shopper), built by the same code a live call uses, then Anthropic's own usage report grouped by workspace (fetched Nov 19, 1:04:19 AM ET). Token counts in the report are Anthropic's billing numbers; the agent's own stream count differs by a few tokens.</p>
 <div class="card scroll"><table><tr><th>Store</th><th>Its workspace</th><th>Turn</th><th>Mia's reply</th><th>Anthropic usage report</th></tr><tr><td><b>HeliumDeploy</b></td><td><code>wrkspc_016hBqTBDDcnsHgb6hbUe8zt</code></td><td>Nov 19, 12:29:12 AM ET</td><td>“Congrats on your purchase! What made you decide to buy from us today?”</td><td class='ok'>Nov 19, 12:29:00 AM ET · 61 in / 24 out</td></tr><tr><td><b>Replogle Globes</b></td><td><code>wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td><td>Nov 19, 12:29:14 AM ET</td><td>“Thanks so much for shopping with us! What made you decide to buy that item?”</td><td class='ok'>Nov 19, 12:29:00 AM ET · 63 in / 79 out</td></tr></table></div>
 <p class="sub">HeliumDeploy's workspace (heliumdeploy-voice) was created Nov 19 and put on HD's store record as its voice workspace; HD's chat stays where it is.</p>
 
@@ -65,7 +65,7 @@ ALL PASS 0
 </pre></div>
 
 <h2>3. The alert the team gets</h2>
-<div class="card"><pre>To: emilio@heliumdeploy.io
+<div class="card"><pre>To: the team alert inbox
 Subject: Mia&#x27;s AI errored on a call (heliumdeploy.myshopify.com) · test call
 
 Mia&#x27;s AI failed mid-call at Nov 19, 12:24:31 AM ET.
@@ -93,7 +93,7 @@ PASS event text cannot add lines to the email
 PASS an ordinary call: no alert
 PASS a store call on our main key is never quiet: one alert per 6 h
 [voice-health] h292:brain-error:h292-error-test on h292-error-test (heliumdeploy.myshopify.com): Mia&#x27;s AI errored on a call (heliumdeploy.myshopify.com) · test call
-PASS dry run through the save-transcript entry point: built, not sent (would go to emilio@heliumdeploy.io)
+PASS dry run through the save-transcript entry point: built, not sent (would go to the team alert inbox)
 
 
 
