@@ -1,0 +1,138 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H292 call AI proof</title>
+<style>
+:root{--bg:#fafaf9;--card:#fff;--ink:#1c1917;--mute:#57534e;--line:#e7e5e4;--ok:#15803d;--no:#b91c1c;--code:#f5f5f4}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111;--card:#1a1a19;--ink:#f5f5f4;--mute:#a8a29e;--line:#2e2d2b;--ok:#4ade80;--no:#f87171;--code:#232220}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1040px;margin:0 auto;padding:32px 16px 64px}h1{font-size:26px;margin:0 0 6px}h2{font-size:18px;margin:36px 0 10px}
+.sub{color:var(--mute)}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+.say{font-size:20px;font-weight:600}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px;border-top:1px solid var(--line);vertical-align:top}
+.scroll{overflow-x:auto}pre{background:var(--code);border-radius:8px;padding:12px;overflow-x:auto;font-size:12.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+code{font-size:12.5px;word-break:break-all}.ok{color:var(--ok);font-weight:600}.no{color:var(--no);font-weight:600}ol li{margin:6px 0}
+a{color:inherit}
+</style></head><body><main>
+<h1>Each store's calls run on its own AI account</h1>
+<p class="sub">H292 · PR #646 at <code>f6dd3103</code> · draft, not deployed · built Nov 19, 2026 (times in Eastern)</p>
+
+<div class="card"><div class="sub">If Mia's AI errors mid-call, she says once:</div>
+<div class="say">“Sorry, it errored. We messed up. Your discount code is coming up on your screen now.”</div>
+<div class="sub">Then the code shows on the shopper's screen, the call ends, and the team gets an email. Never “give me one second”.</div></div>
+
+<h2>1. Normal calls are billed to the store's own workspace</h2>
+<p>One real text-only turn per store (no voice, no shopper), built by the same code a live call uses, then Anthropic's own usage report grouped by workspace (fetched Nov 19, 12:41:51 AM ET).</p>
+<div class="card scroll"><table><tr><th>Store</th><th>Its workspace</th><th>Turn</th><th>Mia's reply</th><th>Anthropic usage report</th></tr><tr><td><b>HeliumDeploy</b></td><td><code>wrkspc_016hBqTBDDcnsHgb6hbUe8zt</code></td><td>Nov 19, 12:29:12 AM ET</td><td>“Congrats on your purchase! What made you decide to buy from us today?”</td><td class='no'>not in the report yet</td></tr><tr><td><b>Replogle Globes</b></td><td><code>wrkspc_01BGBazjTrNGVwqgSxkQfVXB</code></td><td>Nov 19, 12:29:14 AM ET</td><td>“Thanks so much for shopping with us! What made you decide to buy that item?”</td><td class='no'>not in the report yet</td></tr></table></div>
+<p class="sub">HeliumDeploy's workspace (heliumdeploy-voice) was created Nov 19 and put on HD's store record as its voice workspace; HD's chat stays where it is.</p>
+
+<h2>2. The error path, end to end</h2>
+<ol>
+<li><b>Mia's AI fails</b> (after one retry in the same workspace, never another key).</li>
+<li><b>AI and mic off</b>, the page shows “Code unlocked”.</li>
+<li><b>One line</b>, spoken by her voice only (no AI needed).</li>
+<li><b>Call ends</b>; the call is saved with a <code>brain_error</code> event.</li>
+<li><b>Alert email</b> to the team, and <b>the code is minted</b> however few words the shopper said. The store is not billed for the call.</li>
+</ol>
+<div class="card"><b>Live check:</b> a real call brain pointed at a workspace Anthropic refuses, in a real voice-agent session (text only):
+<pre>ok   store calls: one retry then the path (session conn_options)
+ok   the session error hook fires the path on a final AI error
+ok   path pieces: mic off + no more replies, code-unlocked message, one say, the store hang-up, the saved event
+ok   no org key on the worker: apology instead of the greeting, never the main key
+ok   store call without a workspace: logged + workspace_missing event
+ok   no FallbackAdapter onto another key anywhere in the call&#x27;s brain
+ok   final LLM error -&gt; brain failure
+ok   a retry in progress is not
+ok   a voice (TTS) error is not
+ok   an STT error is not
+ok   fires once per call
+ok   order: AI off, code on screen, ONE apology, pause, hang up
+ok   exactly one spoken line, Emile&#x27;s words first
+ok   never &#x27;give me one second&#x27;
+ok   alert event: type, time, workspace, error class
+ok   alert event carries no message, key or prompt text
+ok   apology fails -&gt; call still ends
+ok   during the close: alert only, no second line
+ok   French call -&gt; French apology
+ok   wrapped connection error names its cause class
+ok   call review: ended by our side, apology + code
+     label=workspace wrkspc_0000000000000000H292test errors seen=[(&#x27;llm_error&#x27;, False)] event=[{&#x27;type&#x27;: &#x27;brain_error&#x27;, &#x27;ts&#x27;: &#x27;2026-11-19T05:41:14.078139+00:00&#x27;, &#x27;error_class&#x27;: &#x27;APIStatusError 400 from BadRequestError 400&#x27;, &#x27;workspace&#x27;: &#x27;wrkspc_0000000000000000H292test&#x27;}]
+ok   live: label is the store workspace only
+ok   live: Anthropic refused the turn -&gt; one final llm_error
+ok   live: the path ran once: AI off, code, apology, hang up
+ok   live: error class recorded without its message
+ALL PASS 0
+</pre></div>
+
+<h2>3. The alert the team gets</h2>
+<div class="card"><pre>To: emilio@heliumdeploy.io
+Subject: Mia&#x27;s AI errored on a call (heliumdeploy.myshopify.com) · test call
+
+Mia&#x27;s AI failed mid-call at Nov 19, 12:24:31 AM ET.
+Store: heliumdeploy.myshopify.com
+Call: h292-error-test · room talk-h292-error-test · test call
+Error: APIStatusError 400 from BadRequestError 400
+Anthropic workspace: wrkspc_016hBqTBDDcnsHgb6hbUe8zt
+
+What the shopper got: Mia said &quot;Sorry, it errored. We messed up.&quot;, their discount code came up on screen, and the call ended.
+Check: the workspace&#x27;s credits and limits in console.anthropic.com; agent log line BRAIN_ERROR (lk agent logs --id CA_9pbLvDrLDSCg).
+--
+Call AI alert · /api/save-transcript</pre>
+<p class="sub">Built from the exact event of the live check. One real copy went to Resend's test inbox (delivered@resend.dev), not to the team.</p></div>
+
+<h2>4. App checks (alert, code, billing)</h2>
+<div class="card"><pre>PASS an errored call asks for exactly one alert (a second error on the same call is the same failure)
+PASS subject names the store: &quot;Mia&#x27;s AI errored on a call (heliumdeploy.myshopify.com) · test call&quot;
+PASS body: store, call id, room
+PASS body: the time in Eastern (00:24 ET = 05:24 UTC)
+PASS body: error class + workspace
+PASS body: what the shopper got
+PASS no secrets in the email
+PASS keyed per call: every errored call alerts, a re-saved call never twice
+PASS event text cannot add lines to the email
+PASS an ordinary call: no alert
+PASS a store call on our main key is never quiet: one alert per 6 h
+[voice-health] h292:brain-error:h292-error-test on h292-error-test (heliumdeploy.myshopify.com): Mia&#x27;s AI errored on a call (heliumdeploy.myshopify.com) · test call
+PASS dry run through the save-transcript entry point: built, not sent (would go to emilio@heliumdeploy.io)
+
+
+
+PASS a 4-word, 9-second call is normally too short
+PASS the same call with an AI error: the shopper gets their code
+PASS even an error before the shopper said a word
+PASS no error: the usual bar, unchanged
+PASS save-transcript stores brainError with the call&#x27;s stats
+PASS save-transcript: an errored call is not billed to the store
+PASS save-transcript: the alert gets the room
+PASS issue-discount reads it and skips the bar
+PASS caps and preview mode still apply
+PASS the first brain_error is the one used
+PASS test target is Resend&#x27;s sandbox inbox (delivered@resend.dev)
+PASS real send to the test inbox: sent=true error=none
+
+ALL PASS</pre></div>
+
+<h2>5. Strict routing</h2>
+<div class="card"><pre>ok   workspace read
+ok   no workspace
+ok   junk is not a workspace
+ok   cloud: no subscription
+ok   unset: no subscription
+ok   local rig: subscription
+ok   localhost.evil.com is not local
+ok   workspace store -&gt; one plain LLM, no FallbackAdapter
+ok   org key
+ok   carries the workspace header
+ok   the main key is nowhere in it
+ok   label names the workspace only
+ok   caching kept
+ok   HD -&gt; its own workspace
+ok   one retry, 0.5 s apart, 10 s per attempt
+ok   session options carry them
+ok   no workspace -&gt; main key
+ok   no org key -&gt; MissingOrgKey (never the main key)
+ok   placeholder brain holds no real key
+ok   no key raises
+ALL PASS 0
+</pre></div>
+
+<h2>Not done here (needs Emile's go)</h2>
+<div class="card">Merge, the relay and agent deploys, and the agent's keys (add the org key, remove the Max-plan token). Until then live calls run as before.</div>
+</main></body></html>
